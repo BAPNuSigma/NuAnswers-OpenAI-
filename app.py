@@ -3,30 +3,30 @@ import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-import anthropic
+from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
 
-# Get Anthropic API key
-api_key = os.getenv("ANTHROPIC_API_KEY")
+# Get OpenAI API key
+api_key = os.getenv("OPENAI_API_KEY")
 
 if not api_key:
-    raise ValueError("❌ ERROR: ANTHROPIC_API_KEY is not set! Check your environment variables.")
+    raise ValueError("❌ ERROR: OPENAI_API_KEY is not set! Check your environment variables.")
 
-# Initialize Claude client
-client = anthropic.Anthropic(api_key=api_key)
+# Initialize OpenAI client
+client = OpenAI(api_key=api_key)
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-def get_claude_response(user_prompt):
-    """Function to get response from Claude API"""
+def get_openai_response(user_prompt):
+    """Function to get response from OpenAI API"""
     try:
-        print("⚡ Sending request to Claude...")
+        print("⚡ Sending request to OpenAI...")
         print(f"📨 Prompt: {user_prompt}")
         
-        # System prompt to guide Claude's behavior
+        # System prompt to guide OpenAI's behavior
         system_prompt = """You are an accounting and finance tutor. Your role is to guide students through problems by asking questions and helping them discover the solution themselves.
 
         CRITICAL RULES:
@@ -103,17 +103,20 @@ def get_claude_response(user_prompt):
 
         Remember: Your goal is to guide students to discover answers themselves through questions. Always maintain a questioning approach that helps students think through the problem themselves."""
         
-        response = client.messages.create(
-            model="claude-3-5-haiku-20241022",
-            max_tokens=1000,
+        response = client.chat.completions.create(
+            model="gpt-4-turbo-preview",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
             temperature=0.7,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}]
+            max_tokens=1000
         )
-        print("✅ Received response from Claude")
-        return response.content[0].text
+        
+        print("✅ Received response from OpenAI")
+        return response.choices[0].message.content
     except Exception as e:
-        print(f"❌ Error while calling Claude: {str(e)}")
+        print(f"❌ Error while calling OpenAI: {str(e)}")
         return f"Error: {str(e)}"
 
 @app.route('/chat', methods=['POST'])
@@ -126,8 +129,8 @@ def chat():
         
         user_message = data['message']
         
-        # Get response from Claude
-        tutor_response = get_claude_response(user_message)
+        # Get response from OpenAI
+        tutor_response = get_openai_response(user_message)
         
         # Return the response as JSON
         return jsonify({
