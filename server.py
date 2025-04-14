@@ -1,6 +1,7 @@
 import os
 from openai import OpenAI
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -17,6 +18,7 @@ client = OpenAI(api_key=api_key)
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 def get_openai_response(user_prompt):
     """Function to get response from OpenAI API"""
@@ -49,4 +51,4 @@ def chat():
 
 if __name__ == '__main__':
     print("🚀 Starting Flask server...")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
